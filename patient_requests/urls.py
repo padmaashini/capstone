@@ -1,5 +1,5 @@
 from django.urls import path
-from requests import views
+from patient_requests import views
 
 urlpatterns = [
     path('', views.home, name='home'),

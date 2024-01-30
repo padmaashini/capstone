@@ -13,7 +13,7 @@ class Client(ABC):
     def headers(self) -> Dict[str, str]:
         pass
 
-    def _get(self, url: str, params: Optional[Dict[str, Any]] = None) -> requests.Response:
+    def _get(self, url: str, params: Optional[Dict[str, Any]] = None):
         """
         Internal method to perform a GET request.
         """
