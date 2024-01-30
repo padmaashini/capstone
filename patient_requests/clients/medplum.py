@@ -2,7 +2,7 @@
 
 from .client import Client 
 import base64
-
+import requests
 class MedplumClient(Client):
     """
     Medplum API client.
@@ -28,10 +28,24 @@ class MedplumClient(Client):
             "client_id": self.CLIENT_ID,
             "client_secret": self.CLIENT_SECRET
         }
-        print('p', params)
+   
         res = self._post("https://api.medplum.com/oauth2/token", data=params)
         return res.json() if res.status_code == 200 else None
-        # from requests.clients.medplum import MedplumClient
 
+    def get_access_token(self):
+        authorized = self.authorize()
+
+        return authorized["access_token"]
+    
     def get_practitioner_requests(self, id):
-        pass
+        print("id", id)
+        token = self.get_access_token()
+        headers = {
+            "Authorization": f"Bearer {token}",
+            "Content-Type": "application/json"
+        }
+        # id example for testing: b292f7a7-0adc-40db-bb76-6245b8411fda
+        # id = { 'reference': f"Practitioner/{id}" }
+        practitioner_id = "b292f7a7-0adc-40db-bb76-6245b8411fda"
+        res = requests.get(f"{self.BASE_URL}/Task?owner=Practitioner/{id}", headers=headers)
+        return res

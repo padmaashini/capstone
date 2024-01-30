@@ -24,7 +24,8 @@ class Client(ABC):
         return response
     
     def _post(self, url, data):
-        response = requests.post(url, headers=self.headers(), json=data)
+        response = requests.post(url, headers=self.headers(), data=data)
+
         if response.status_code != 200:
             print(f"Error: {response.status_code}")
         return response
