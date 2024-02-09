@@ -1,4 +1,4 @@
-# Final Year Capstone Project
+# CareQueue - prioritizing patient requests
 
 NLP + Request Management
 
@@ -14,6 +14,8 @@ NLP + Request Management
 
 ## Getting your server up and running
 - `python manage.py runserver` will start your server on `localhost:8000`
+- `celery -A core beat --loglevel=info --scheduler django_celery_beat.schedulers:DatabaseScheduler` will run the scheduler
+- `celery -A core worker --loglevel=info` runs the Celery worker
 
 ## Dev Tools
 - To access the Django shell, run `python manage.py shell`
@@ -34,3 +36,5 @@ NLP + Request Management
 
 ## Languages, Frameworks, Tech Used
 - Python with Django
+- Celery
+- RabbitMQ
