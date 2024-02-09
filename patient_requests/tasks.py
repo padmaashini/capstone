@@ -3,6 +3,10 @@ from django.conf import settings
 import os
 import whisper
 import logging
+from dotenv import load_dotenv
+
+# Load .env file
+load_dotenv()
 
 # Load the Whisper model when the worker starts to avoid loading it on each task execution
 model = whisper.load_model("tiny")
@@ -13,8 +17,8 @@ logger = logging.getLogger(__name__)
 @shared_task
 def check_and_process_audio_files():
     try:
-        # Use an absolute path for the audio file
-        audio_file_path = os.path.join(settings.BASE_DIR, 'audios', 'Hungry.m4a')
+        audio_file_folder = os.getenv('AUDIO_FILES_DIR')
+        audio_file_path = audio_file_folder + 'Hungry.m4a'
 
         # Transcribe the audio file
         result = model.transcribe(audio_file_path)
