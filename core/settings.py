@@ -87,7 +87,7 @@ DATABASES = {
 CELERY_BEAT_SCHEDULE = {
     'parse-audio-file': {
         'task': 'patient_requests.tasks.check_and_process_audio_files',  # Use the correct path to your task function
-        'schedule': crontab(minute='*'),  # Runs every minute
+        'schedule': crontab(minute='*/5'),  # Runs every minute
     },
 }
 

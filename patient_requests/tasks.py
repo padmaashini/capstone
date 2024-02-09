@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 def check_and_process_audio_files():
     try:
         audio_file_folder = os.getenv('AUDIO_FILES_DIR')
-        audio_file_path = audio_file_folder + 'Hungry.m4a'
+        audio_file_path = audio_file_folder + '/Hungry.m4a'
 
         # Transcribe the audio file
         result = model.transcribe(audio_file_path)
@@ -28,7 +28,8 @@ def check_and_process_audio_files():
         logger.info(f"Transcribed text: {transcribed_text}")
         
         # You can then return this text if you wish to use it in further task chains
-        return transcribed_text
+        print('transcribed text', transcribed_text)
+        # return transcribed_text
 
     except Exception as e:
         # Log exceptions
