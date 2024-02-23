@@ -87,7 +87,7 @@ DATABASES = {
 CELERY_BEAT_SCHEDULE = {
     'parse-audio-file': {
         'task': 'patient_requests.tasks.check_and_process_audio_files',  # Use the correct path to your task function
-        'schedule': crontab(minute='*/5'),  # Runs every minute
+        'schedule': crontab(minute='*/1'),  # Runs every minute
     },
 }
 
@@ -140,3 +140,21 @@ STATIC_URL = 'static/'
 # https://docs.djangoproject.com/en/5.0/ref/settings/#default-auto-field
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+        },
+    },
+    'loggers': {
+        'celery': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': True,
+        },
+    },
+}
+
