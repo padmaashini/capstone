@@ -20,13 +20,13 @@ def requests_for_practitioner(request, id):
         nurse_reference = resource['owner']
         data.append({
             "id": resource["id"],
-            "patient_name": patient_reference['display'],
+            "patient_name": patient_reference.get('display', ""),
             "room_number": "TO_FILL_IN",
             "bed_number": "TO_FILL_IN",
-            "time_of_request": resource['authoredOn'],
+            "time_of_request": resource.get('authoredOn', ""),
             "completed": resource['status'] == 'completed',
             "category": resource["code"]["text"],
-            "transcribed_test": "TO_FILL_IN"
+            "transcribed_text": resource.get('description', "")
         })
     
     return JsonResponse({ "status": "Success", "data": data })

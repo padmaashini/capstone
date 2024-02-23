@@ -5,6 +5,8 @@ import whisper
 import logging
 from dotenv import load_dotenv
 
+from patient_requests.models import MicrophoneBedPatient
+from patient_requests.clients.medplum import MedplumClient
 # Load .env file
 load_dotenv()
 
@@ -17,31 +19,29 @@ logger = get_task_logger(__name__)
 
 @shared_task
 def check_and_process_audio_files():
-    logger.info('hello')
+    # either get this from the audio file name or from a file 
+    microphone_id = 1 
+
     try:
         audio_file_folder = os.getenv('AUDIO_FILES_DIR')
         audio_file_path = audio_file_folder + '/Hungry.m4a'
 
         # Transcribe the audio file
         result = model.transcribe(audio_file_path)
-        print('res', result)
-        # Extract the transcribed text
         transcribed_text = result.get("text", "")
-        # transcribed_text = "Hello"
-        logger.info(f"Transcribed text: {transcribed_text}")
+        logger.info(f"Transcribed Text: {transcribed_text}")
         
-        # You can then return this text if you wish to use it in further task chains
-        print('transcribed text', transcribed_text)
-        # with open('example.txt', 'w') as file:
-        #     file.write("Hello, World!\n")
-        #     file.write(transcribed_text)
-        # return transcribed_text
+        microphone_patient_mapping = MicrophoneBedPatient.objects.get(microphone_id=microphone_id)
+        if not microphone_patient_mapping:
+            raise Exception("microphone id not found")
 
+        # TO-DO: do some logic here to determine the bucket for the request type
+
+        medplum = MedplumClient()
+        res = medplum.create_patient_request(mapping=microphone_patient_mapping, transcribed_text=transcribed_text)
+        print('res', res)
+        logger.info(f"Client Response: {res}")
+    
     except Exception as e:
-        # Log exceptions
-        logger.error(f"An error occurred during transcription: {e}", exc_info=True)
-        # Reraise the exception to ensure the task is marked as failed
-        raise
-
-if __name__ == "__main__":
-    check_and_process_audio_files()
+        logger.error(f"An error occurred during processing of audio file: {e}", exc_info=True)
+        raise Exception(f"An error occurred during processing of audio file: {e}")

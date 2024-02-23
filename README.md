@@ -15,6 +15,7 @@ NLP + Request Management
 ## Getting your server up and running
 - `python manage.py runserver` will start your server on `localhost:8000`
 - `celery -A core beat --loglevel=info --scheduler django_celery_beat.schedulers:DatabaseScheduler` will run the scheduler
+- `celery -A myapp.celeryapp worker --loglevel=info -P eventlet` updated worker command
 - `celery -A core worker --loglevel=info` runs the Celery worker
 - http://localhost:15672/#/
 

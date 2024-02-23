@@ -32,7 +32,8 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
-    'patient_requests.apps.PatientRequestsConfig',
+    'patient_requests',
+    # 'patient_requests.apps.PatientRequestsConfig',
     'allauth',
     'django.contrib.admin',
     'django.contrib.auth',
