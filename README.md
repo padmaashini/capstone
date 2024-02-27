@@ -19,6 +19,7 @@ NLP + Request Management
 - `celery -A core  worker --loglevel=info -P eventlet` updated v2 worker command
 - `celery -A core worker --loglevel=info` runs the Celery worker
 - http://localhost:15672/#/
+- `celery -A core purge ` to remove all messages from the queue
 
 ## Dev Tools
 - To access the Django shell, run `python manage.py shell`
