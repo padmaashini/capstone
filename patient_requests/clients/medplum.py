@@ -50,11 +50,9 @@ class MedplumClient(Client):
         return res
     
     def create_patient_request(self, mapping, transcribed_text):
-        # TO-DO; fix id of patient, and figure out the location stuff
-        # 
         practitioner_id = mapping.practitioner_id
         patient_id = mapping.patient_id
-        bed_num = mapping.bed_id
+        location_id = mapping.bed_id
         token = self.get_access_token()
         headers = {
             "Authorization": f"Bearer {token}",
@@ -72,7 +70,9 @@ class MedplumClient(Client):
             "requester": {
                 "reference": f"Patient/{patient_id}",
             },
-            "location": bed_num,
+            "location": {
+                "reference": f"Location/{location_id}"
+            },
             "code": {
                 "text": "Food"
             }   
@@ -81,21 +81,3 @@ class MedplumClient(Client):
         response = requests.post(f"{self.BASE_URL}/Task", headers=headers, json=payload)
         print('response', response.json())
         return response.json() if response.status_code == 201 else None
-
-    # resourceType: 'Task',
-    #   status: 'requested',
-    #   intent: 'unknown',
-    #   owner: {
-    #     reference: "Practitioner/b292f7a7-0adc-40db-bb76-6245b8411fda",
-    #     id: "b292f7a7-0adc-40db-bb76-6245b8411fda",
-    #     display: "Padmaashini Sukumaran"
-    #   },
-    #   requester: {
-    #     reference: "Patient/841396bb-4ef1-4ef7-abf1-418cae990bac",
-    #     id: "841396bb-4ef1-4ef7-abf1-418cae990bac",
-    #     display: "John Smith"
-    #   },
-    #   code: {
-    #     text: requestType
-    #   },
-    #   authoredOn: getCurrentDateTimeInEST()
