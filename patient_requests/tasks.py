@@ -18,6 +18,7 @@ from sklearn.pipeline import make_pipeline
 
 from transformers import GPT2Tokenizer, GPT2ForSequenceClassification
 from transformers import Trainer, TrainingArguments
+from openai import OpenAI
 
 # Load .env file
 load_dotenv()
@@ -25,60 +26,41 @@ load_dotenv()
 # Load the Whisper model when the worker starts to avoid loading it on each task execution
 model = whisper.load_model("tiny")
 
+key = os.getenv('OPENAI_API_KEY')
+client = OpenAI(api_key=key)
+
 from celery.utils.log import get_task_logger
 
 logger = get_task_logger(__name__)
 
-requests = [
-    "I want to eat chips",
-    "I need a blanket",
-    "I am feeling pain in my back",
-    "Can I go to the bathroom",
-    "I need some ice for my head",
-    "I feel sick, need clinical help",
-    "I want to go pee", 
-    "I need to take a dump",
-    'Can I get ice for my drink?',
-  'Can you need to use the restroom',
-  'I need to see a doctor',
-  'Can Can you go to the bathroom?',
-  'Can yous the bathroom available?',
-  'When is my next checkup?',
-  "I'm feeling a sharp pain in my back",
-  'Can I have a blanket?',
-  'Can I get ice for my drink?',
-  "Can you'm feeling a sharp pain in my back",
-  'It hurts here',
-  'Can you would like to have lunch now',
-  'Can Can you get my medication?',
-  'What does my test result say?',
-  'It hurts here',
-  'What does my test result say?',
-  'Can Can you go to the bathroom?',
-  'When is my next checkup?',
-  'My head hurts',
-  "I'm craving for some food"
-]
-categories = ["food", "blanket", "pain", "bathroom", "ice", "clinical", "bathroom", "bathroom", 'ice',
-  'bathroom',
-  'clinical',
-  'bathroom',
-  'bathroom',
-  'clinical',
-  'pain',
-  'blanket',
-  'ice',
-  'pain',
-  'pain',
-  'food',
-  'clinical',
-  'clinical',
-  'pain',
-  'clinical',
-  'bathroom',
-  'clinical',
-  'pain',
-  'food']
+CATEGORIES_PRIORITIES = {
+  "Emergency": 1,
+  "Pain/Discomfort":  2,
+  "Medical Needs": 3,
+  "Bathroom Needs": 4,
+  "Temperature-Related Needs": 5,
+  "Food": 6,
+  "Thirsty": 7,
+  "Shower": 8,
+  "Entertainment Related Needs": 9,
+  "Questions/General Information": 10,
+  "Other - Non-Medical": 11,
+  "Uncategorizable": 12
+}
+
+def classify_text(text):
+  categories = CATEGORIES_PRIORITIES.keys()
+
+  prompt = f"Classify the following text into one of these categories:\
+     {', '.join(categories)}.\n\nText: \"{text}\"\n\nCategory:"
+
+  completion = client.chat.completions.create(
+    model="gpt-3.5-turbo",
+    messages=[
+      {"role": "user", "content": prompt}
+    ]
+  )  
+  return completion.choices[0].message.content.strip()
 
 @shared_task
 def check_and_process_audio_files():
@@ -98,21 +80,19 @@ def check_and_process_audio_files():
         if not microphone_patient_mapping:
             raise Exception("microphone id not found")
 
-        # TO-DO: do some logic here to determine the bucket for the request type
-        model = make_pipeline(CountVectorizer(), MultinomialNB())
-
-        # Train the model
-        model.fit(requests, categories)
-
-        # Now, predict the category of a new text
-        new_texts = ["I want to go pee"]
-        predicted_categories = model.predict(new_texts)
-        print('predicted_categories', predicted_categories)
+        # Bucket the request
+        category = classify_text(transcribed_text)
+        
+        # Make request in Medplum
         medplum = MedplumClient()
-        res = medplum.create_patient_request(mapping=microphone_patient_mapping, transcribed_text=transcribed_text)
-        print('res', res)
+        res = medplum.create_patient_request(mapping=microphone_patient_mapping, transcribed_text=transcribed_text, bucket=category)
         logger.info(f"Client Response: {res}")
     
     except Exception as e:
         logger.error(f"An error occurred during processing of audio file: {e}", exc_info=True)
         raise Exception(f"An error occurred during processing of audio file: {e}")
+
+
+if __name__ == "__main__":
+  res = classify_text("I have to go pee pee")
+  print('r', res)

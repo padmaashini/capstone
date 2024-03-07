@@ -4,14 +4,15 @@ from .client import Client
 import base64
 import requests
 from datetime import datetime
+import os
 
 class MedplumClient(Client):
     """
     Medplum API client.
     """
     BASE_URL = "https://api.medplum.com/fhir/R4"
-    CLIENT_ID = "26783641-2608-46d7-9875-1a57658e978f"
-    CLIENT_SECRET = "8869347129b106856c90d73d9242a1a0e267c212fdb8359ccbbe8eb438ef9af2"
+    CLIENT_ID = os.getenv('MEDPLUM_CLIENT_ID')
+    CLIENT_SECRET = os.getenv('MEDPLUM_CLIENT_SECRET')
 
     def headers(self):
         client_credentials = f"{self.CLIENT_ID}:{self.CLIENT_SECRET}"
@@ -67,7 +68,7 @@ class MedplumClient(Client):
         response = requests.get(f"{self.BASE_URL}/Location/{location_id}", headers=headers)
         return response.json() if response.status_code == 200 else None
 
-    def create_patient_request(self, mapping, transcribed_text):
+    def create_patient_request(self, mapping, transcribed_text, bucket):
         practitioner_id = mapping.practitioner_id
         patient_id = mapping.patient_id
         location_id = mapping.bed_id
@@ -109,7 +110,7 @@ class MedplumClient(Client):
                 "reference": f"Location/{location_id}"
             },
             "code": {
-                "text": "Food"
+                "text": bucket
             }   
         }
 
