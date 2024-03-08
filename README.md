@@ -7,17 +7,18 @@ NLP + Request Management
 - Setup your virtual environment by running `python -m venv venv`
 - Activate your environment by running: 
     - On a bash shell: `source venv/Scripts/activate`
-    - Windows Command Prompt: `venv\Scripts\activate.bat`
+    - Windows Command Prompt: `venv\Scripts\activate`
 - Once you have activated your environment, install all dependencies, `pip install -r requirements.txt`
 - To get superuser access to the application, run `python manage.py createsuperuser` but only after you have run `migrate` if you haven't done so already
     - Using the credentials set, you can now login to `http://127.0.0.1:8000/admin` 
 
 ## Getting your server up and running
+To fetch the requests from the frontend, you'll need to get the server up and running:
 - `python manage.py runserver` will start your server on `localhost:8000`
+
+To connect the Raspberry Pi file recordings to the cron job, you'll need to run the following commands:
 - `celery -A core beat --loglevel=info --scheduler django_celery_beat.schedulers:DatabaseScheduler` will run the scheduler
-- `celery -A myapp.celeryapp worker --loglevel=info -P eventlet` updated worker command
-- `celery -A core  worker --loglevel=info -P eventlet` updated v2 worker command
-- `celery -A core worker --loglevel=info` runs the Celery worker
+- `celery -A core  worker --loglevel=info -P eventlet` runs the Celery worker
 - http://localhost:15672/#/
 - `celery -A core purge ` to remove all messages from the queue
 
