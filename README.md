@@ -13,11 +13,9 @@ NLP + Request Management
     - Using the credentials set, you can now login to `http://127.0.0.1:8000/admin` 
 
 ## Getting your server up and running
-- `python manage.py runserver` will start your server on `localhost:8000`
+- `python manage.py runserver` will start your server on `localhost:8000` 
 - `celery -A core beat --loglevel=info --scheduler django_celery_beat.schedulers:DatabaseScheduler` will run the scheduler
-- `celery -A myapp.celeryapp worker --loglevel=info -P eventlet` updated worker command
-- `celery -A core  worker --loglevel=info -P eventlet` updated v2 worker command
-- `celery -A core worker --loglevel=info` runs the Celery worker
+- `celery -A core  worker --loglevel=info -P eventlet` runs the Celery worker
 - http://localhost:15672/#/
 - `celery -A core purge ` to remove all messages from the queue
 
