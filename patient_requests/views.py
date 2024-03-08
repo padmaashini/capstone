@@ -5,52 +5,129 @@ from django.http import JsonResponse
 
 from patient_requests.clients.medplum import MedplumClient
 from collections import defaultdict
+import concurrent.futures
+from patient_requests.prioritizer import RequestPrioritizer
 
 def home(request):
     return render(request, "pages/home.html", {})
 
 def requests_for_practitioner(request, id):
     data = []
-    location_hash = defaultdict(list)
+    location_hash = defaultdict(dict)
+    patient_hash = defaultdict(dict)
     medplum = MedplumClient()
     res = medplum.get_practitioner_requests(id)
     raw_tasks = res.json()['entry']
 
+    # Collect unique patient and location IDs
+    patient_ids = set()
+    location_ids = set()
     for task in raw_tasks:
         resource = task['resource']
-        patient_reference = resource['requester']
-        nurse_reference = resource['owner']
+        patient_reference = resource['requester']['reference']
+        patient_ids.add(patient_reference.split('/')[-1])
 
-        location_obj = resource.get('location', None)
-        location_reference = location_obj.get('reference', "") if location_obj else ""
-        refs = location_reference.split('/')
-        location_id = refs[-1]
+        location_reference = resource.get('location', {}).get('reference', '')
+        if location_reference:
+            location_ids.add(location_reference.split('/')[-1])
 
-        location_hash[location_id].append({
+    # Fetch patient and location details in parallel
+    with concurrent.futures.ThreadPoolExecutor() as executor:
+        patient_futures = {executor.submit(medplum.get_patient_by_id, pid): pid for pid in patient_ids}
+        location_futures = {executor.submit(medplum.get_location_by_id, lid): lid for lid in location_ids}
+
+        for future in concurrent.futures.as_completed(patient_futures):
+            patient_id = patient_futures[future]
+            patient_hash[patient_id] = future.result()
+
+        for future in concurrent.futures.as_completed(location_futures):
+            location_id = location_futures[future]
+            location_hash[location_id] = future.result()
+
+    # Process tasks
+    requests = []
+    for task in raw_tasks:
+        resource = task['resource']
+        patient_id = resource['requester']['reference'].split('/')[-1]
+        location_id = resource.get('location', {}).get('reference', '').split('/')[-1] if resource.get('location', {}).get('reference', '') else ""
+
+        patient_info = patient_hash.get(patient_id, {})
+        location_info = location_hash.get(location_id, {})
+
+        patient_name = ""
+        if patient_info and patient_info.get('name'):
+            name_obj = patient_info.get('name', [])[0]
+            given = name_obj.get('given', [])[0]
+            family = name_obj.get('family', "")
+            patient_name = f"{given} {family}"
+
+        location_name = location_info.get("name", "") if location_info else ""
+        room_number, bed_number = location_name.split(" - ") if location_name else ("Not Available", "Not Available")
+
+        category = resource["code"]["text"]
+        condition_obj = patient_info.get("extension", [])[0]
+        print('condition_obj', condition_obj)
+        priority = RequestPrioritizer.calculate_priority(condition_obj.get("valueString", None), category)
+
+        requests.append({
             "id": resource["id"],
-            "patient_name": patient_reference.get('display', ""),
+            "patient_name": patient_name,
             "time_of_request": resource.get('authoredOn', ""),
             "completed": resource['status'] == 'completed',
-            "category": resource["code"]["text"],
+            "category": category,
             "transcribed_text": resource.get('description', ""),
-            "room_number": "Not Available",
-            "bed_number": "Not Available"
+            "room_number": room_number,
+            "bed_number": bed_number,
+            "priority": priority
         })
 
-    requests = []
-    for location_id, data in location_hash.items():
-        if not location_id:
-            for d in data:
-                requests.append(d)
-            continue
+    return JsonResponse({"status": "Success", "data": requests})
+# def requests_for_practitioner(request, id):
+#     data = []
+#     location_hash = defaultdict(list)
+#     patient_hash = defaultdict(list)
+#     medplum = MedplumClient()
+#     res = medplum.get_practitioner_requests(id)
+#     raw_tasks = res.json()['entry']
 
-        location_res = medplum.get_location_by_id(location_id)
-        location_name = location_res.get("name", "")
-        room_number , bed_number = location_name.split(" - ")
+#     for task in raw_tasks:
+#         resource = task['resource']
+#         patient_reference = resource['requester']
+#         nurse_reference = resource['owner']
 
-        for d in data:
-            d["room_number"] = room_number
-            d["bed_number"] = bed_number
-            requests.append(d)
+#         category =  resource["code"]["text"]
+#         priority = get_priority(patient_reference, category)
+#         location_obj = resource.get('location', None)
+#         location_reference = location_obj.get('reference', "") if location_obj else ""
+#         refs = location_reference.split('/')
+#         location_id = refs[-1]
 
-    return JsonResponse({ "status": "Success", "data": requests })
+#         location_hash[location_id].append({
+#             "id": resource["id"],
+#             "patient_name": patient_reference.get('display', ""),
+#             "time_of_request": resource.get('authoredOn', ""),
+#             "completed": resource['status'] == 'completed',
+#             "category": category,
+#             "transcribed_text": resource.get('description', ""),
+#             "room_number": "Not Available",
+#             "bed_number": "Not Available",
+#             "priority": priority
+#         })
+
+#     requests = []
+#     for location_id, data in location_hash.items():
+#         if not location_id:
+#             for d in data:
+#                 requests.append(d)
+#             continue
+
+#         location_res = medplum.get_location_by_id(location_id)
+#         location_name = location_res.get("name", "")
+#         room_number , bed_number = location_name.split(" - ")
+
+#         for d in data:
+#             d["room_number"] = room_number
+#             d["bed_number"] = bed_number
+#             requests.append(d)
+
+#     return JsonResponse({ "status": "Success", "data": requests })

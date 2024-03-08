@@ -6,6 +6,10 @@ import requests
 from datetime import datetime
 import os
 
+from dotenv import load_dotenv
+
+load_dotenv()
+
 class MedplumClient(Client):
     """
     Medplum API client.
@@ -31,7 +35,6 @@ class MedplumClient(Client):
             "client_id": self.CLIENT_ID,
             "client_secret": self.CLIENT_SECRET
         }
-   
         res = self._post("https://api.medplum.com/oauth2/token", data=params)
         return res.json() if res.status_code == 200 else None
 
