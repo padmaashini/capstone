@@ -13,7 +13,10 @@ NLP + Request Management
     - Using the credentials set, you can now login to `http://127.0.0.1:8000/admin` 
 
 ## Getting your server up and running
-- `python manage.py runserver` will start your server on `localhost:8000` 
+To fetch the requests from the frontend, you'll need to get the server up and running:
+- `python manage.py runserver` will start your server on `localhost:8000`
+
+To connect the Raspberry Pi file recordings to the cron job, you'll need to run the following commands:
 - `celery -A core beat --loglevel=info --scheduler django_celery_beat.schedulers:DatabaseScheduler` will run the scheduler
 - `celery -A core  worker --loglevel=info -P eventlet` runs the Celery worker
 - http://localhost:15672/#/
