@@ -7,7 +7,7 @@ NLP + Request Management
 - Setup your virtual environment by running `python -m venv venv`
 - Activate your environment by running: 
     - On a bash shell: `source venv/Scripts/activate`
-    - Windows Command Prompt: `venv\Scripts\activate.bat`
+    - Windows Command Prompt: `venv\Scripts\activate`
 - Once you have activated your environment, install all dependencies, `pip install -r requirements.txt`
 - To get superuser access to the application, run `python manage.py createsuperuser` but only after you have run `migrate` if you haven't done so already
     - Using the credentials set, you can now login to `http://127.0.0.1:8000/admin` 
