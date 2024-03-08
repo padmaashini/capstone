@@ -69,7 +69,14 @@ def check_and_process_audio_files():
 
     try:
         audio_file_folder = os.getenv('AUDIO_FILES_DIR')
-        audio_file_path = audio_file_folder + '/Hungry.m4a'
+        
+        # List all files in the directory
+        for audio_file_name in os.listdir(audio_file_folder):
+            audio_file_path = os.path.join(audio_file_folder, audio_file_name)
+
+            # Skip if not an audio file or already processed
+            if not audio_file_path.endswith('.m4a') or ProcessedAudioFile.objects.filter(file_name=audio_file_name).exists():
+                continue
 
         # Transcribe the audio file
         result = model.transcribe(audio_file_path)
@@ -87,7 +94,9 @@ def check_and_process_audio_files():
         medplum = MedplumClient()
         res = medplum.create_patient_request(mapping=microphone_patient_mapping, transcribed_text=transcribed_text, bucket=category)
         logger.info(f"Client Response: {res}")
-    
+
+        # After processing, record the file name in the database
+        ProcessedAudioFile.objects.create(file_name=audio_file_name)
     except Exception as e:
         logger.error(f"An error occurred during processing of audio file: {e}", exc_info=True)
         raise Exception(f"An error occurred during processing of audio file: {e}")
