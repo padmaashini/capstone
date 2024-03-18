@@ -5,7 +5,7 @@ import whisper
 import logging
 from dotenv import load_dotenv
 
-from patient_requests.models import MicrophoneBedPatient
+from patient_requests.models import MicrophoneBedPatient, ProcessedAudioFile
 from patient_requests.clients.medplum import MedplumClient
 
 from sklearn.feature_extraction.text import CountVectorizer
@@ -64,9 +64,6 @@ def classify_text(text):
 
 @shared_task
 def check_and_process_audio_files():
-    # either get this from the audio file name or from a file 
-    microphone_id = 1 
-
     try:
         audio_file_folder = os.getenv('AUDIO_FILES_DIR')
         
@@ -75,28 +72,31 @@ def check_and_process_audio_files():
             audio_file_path = os.path.join(audio_file_folder, audio_file_name)
 
             # Skip if not an audio file or already processed
-            if not audio_file_path.endswith('.m4a') or ProcessedAudioFile.objects.filter(file_name=audio_file_name).exists():
+            if not audio_file_path.endswith('.wav') or ProcessedAudioFile.objects.filter(file_name=audio_file_name).exists():
                 continue
+            
+            microphone_id = int(audio_file_name.split('-')[0])
+            print('audio file path', audio_file_path)
+            # Transcribe the audio file
+            result = model.transcribe(audio_file_path)
+            transcribed_text = result.get("text", "")
+            logger.info(f"Transcribed Text: {transcribed_text}")
+            
+            microphone_patient_mapping = MicrophoneBedPatient.objects.get(microphone_id=microphone_id)
+            if not microphone_patient_mapping:
+                raise Exception("microphone id not found")
 
-        # Transcribe the audio file
-        result = model.transcribe(audio_file_path)
-        transcribed_text = result.get("text", "")
-        logger.info(f"Transcribed Text: {transcribed_text}")
-        
-        microphone_patient_mapping = MicrophoneBedPatient.objects.get(microphone_id=microphone_id)
-        if not microphone_patient_mapping:
-            raise Exception("microphone id not found")
+            # Bucket the request
+            category = classify_text(transcribed_text)
+            
+            # Make request in Medplum
+            medplum = MedplumClient()
+            res = medplum.create_patient_request(mapping=microphone_patient_mapping, transcribed_text=transcribed_text, bucket=category)
+            logger.info(f"Client Response: {res}")
 
-        # Bucket the request
-        category = classify_text(transcribed_text)
-        
-        # Make request in Medplum
-        medplum = MedplumClient()
-        res = medplum.create_patient_request(mapping=microphone_patient_mapping, transcribed_text=transcribed_text, bucket=category)
-        logger.info(f"Client Response: {res}")
-
-        # After processing, record the file name in the database
-        ProcessedAudioFile.objects.create(file_name=audio_file_name)
+            # After processing, record the file name in the database
+            ProcessedAudioFile.objects.create(file_name=audio_file_name)
+            os.remove(audio_file_path)
     except Exception as e:
         logger.error(f"An error occurred during processing of audio file: {e}", exc_info=True)
         raise Exception(f"An error occurred during processing of audio file: {e}")

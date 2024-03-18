@@ -22,6 +22,13 @@ To connect the Raspberry Pi file recordings to the cron job, you'll need to run 
 - http://localhost:15672/#/
 - `celery -A core purge ` to remove all messages from the queue
 
+## Delete All Instances of Table
+- Run the Django shell with the command `python manage.py shell`
+- And run the following commands in the shell:
+```
+from patient_requests.models import ProcessedAudioFile
+ProcessedAudioFile.objects.all().delete()
+```
 ## Dev Tools
 - To access the Django shell, run `python manage.py shell`
 - Migrations
