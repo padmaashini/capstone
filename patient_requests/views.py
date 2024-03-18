@@ -65,9 +65,12 @@ def requests_for_practitioner(request, id):
         room_number, bed_number = location_name.split(" - ") if location_name else ("Not Available", "Not Available")
 
         category = resource["code"]["text"]
-        condition_obj = patient_info.get("extension", [])[0]
+        condition_obj = patient_info.get("extension", [])
+        condition = {}
+        if condition_obj:
+            condition = condition_obj[0]
         print('condition_obj', condition_obj)
-        priority = RequestPrioritizer.calculate_priority(condition_obj.get("valueString", None), category)
+        priority = RequestPrioritizer.calculate_priority(condition.get("valueString", None), category)
 
         requests.append({
             "id": resource["id"],
