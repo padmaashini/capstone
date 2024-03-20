@@ -69,7 +69,7 @@ def requests_for_practitioner(request, id):
         condition = {}
         if condition_obj:
             condition = condition_obj[0]
-        print('condition_obj', condition_obj)
+
         priority = RequestPrioritizer.calculate_priority(condition.get("valueString", None), category)
 
         requests.append({
@@ -83,5 +83,6 @@ def requests_for_practitioner(request, id):
             "bed_number": bed_number,
             "priority": priority
         })
-
+    
+    requests.sort(key=lambda x: x['priority'], reverse=True)
     return JsonResponse({"status": "Success", "data": requests})
