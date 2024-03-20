@@ -12,6 +12,7 @@ https://docs.djangoproject.com/en/5.0/ref/settings/
 
 from pathlib import Path
 from celery.schedules import crontab
+from datetime import timedelta
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -91,8 +92,8 @@ DATABASES = {
 
 CELERY_BEAT_SCHEDULE = {
     'parse-audio-file': {
-        'task': 'patient_requests.tasks.check_and_process_audio_files',  # Use the correct path to your task function
-        'schedule': crontab(minute='*/1'),  # Runs every minute
+        'task': 'patient_requests.tasks.check_and_process_audio_files',
+        'schedule': timedelta(seconds=15),  # Runs every 15 seconds
     },
 }
 
