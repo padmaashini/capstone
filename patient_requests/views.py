@@ -7,9 +7,19 @@ from patient_requests.clients.medplum import MedplumClient
 from collections import defaultdict
 import concurrent.futures
 from patient_requests.prioritizer import RequestPrioritizer
+import datetime
 
 def home(request):
     return render(request, "pages/home.html", {})
+
+def parse_authored_time(authored_on):
+    time_format = '%Y-%m-%dT%H:%M:%S.%f'
+    try:
+        return datetime.datetime.strptime(authored_on, time_format)
+    except ValueError:
+        # Handle cases where authored_on might not have fractional seconds
+        return datetime.datetime.strptime(authored_on.split('.')[0], '%Y-%m-%dT%H:%M:%S')
+
 
 def requests_for_practitioner(request, id):
     data = []
@@ -22,6 +32,9 @@ def requests_for_practitioner(request, id):
     # Collect unique patient and location IDs
     patient_ids = set()
     location_ids = set()
+
+    raw_tasks.sort(key=lambda task: parse_authored_time(task['resource'].get("authoredOn", "")))
+
     for task in raw_tasks:
         resource = task['resource']
         patient_reference = resource['requester']['reference']
