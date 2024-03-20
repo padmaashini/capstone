@@ -70,12 +70,13 @@ def requests_for_practitioner(request, id):
         if condition_obj:
             condition = condition_obj[0]
 
-        priority = RequestPrioritizer.calculate_priority(condition.get("valueString", None), category)
+        authored_on = resource.get('authoredOn', "")
+        priority = RequestPrioritizer.calculate_priority(condition.get("valueString", None), category, authored_on)
 
         requests.append({
             "id": resource["id"],
             "patient_name": patient_name,
-            "time_of_request": resource.get('authoredOn', ""),
+            "time_of_request": authored_on,
             "completed": resource['status'] == 'completed',
             "category": category,
             "transcribed_text": resource.get('description', ""),
@@ -84,5 +85,6 @@ def requests_for_practitioner(request, id):
             "priority": priority
         })
     
-    requests.sort(key=lambda x: x['priority'], reverse=True)
-    return JsonResponse({"status": "Success", "data": requests})
+    
+    sorted_requests = sorted(requests, key=lambda x: x['priority'])
+    return JsonResponse({"status": "Success", "data": sorted_requests})

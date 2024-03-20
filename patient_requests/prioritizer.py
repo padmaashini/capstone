@@ -1,3 +1,5 @@
+from datetime import datetime
+
 class RequestPrioritizer():
     """
     Prioritizes requests
@@ -37,9 +39,9 @@ class RequestPrioritizer():
 
     @classmethod
     def calculate_time_priority_factor(cls, authored_on):
-        time_format = '%Y-%m-%dT%H:%M:%S'  
-        time_of_request = datetime.datetime.strptime(authored_on, time_format)
-        time_now = datetime.datetime.now()
+        time_format = '%Y-%m-%dT%H:%M:%S.%f'
+        time_of_request = datetime.strptime(authored_on, time_format)
+        time_now = datetime.now()
         time_diff = time_now - time_of_request
 
         # convert to half-hour intervals
@@ -49,12 +51,11 @@ class RequestPrioritizer():
         return 0.9**half_hours_elapsed
 
     @classmethod
-    def calculate_priority(cls, condition, request_category):
+    def calculate_priority(cls, condition, request_category, authored_on):
         category_priority = cls.CATEGORIES_PRIORITIES.get(request_category, 13)
         if condition in cls.RISK_FACTORS:
             category_priority *= 0.6
-        
-        time_factor = cls.calculate_time_priority_factor(authored_on)
+        time_factor = cls.calculate_time_priority_factor(authored_on) if authored_on else 1
         category_priority *= time_factor
 
         return category_priority
