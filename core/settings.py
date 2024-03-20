@@ -93,7 +93,7 @@ DATABASES = {
 CELERY_BEAT_SCHEDULE = {
     'parse-audio-file': {
         'task': 'patient_requests.tasks.check_and_process_audio_files',
-        'schedule': timedelta(seconds=15),  # Runs every 15 seconds
+        'schedule': timedelta(seconds=30),  # Runs every 30 seconds
     },
 }
 

@@ -100,8 +100,3 @@ def check_and_process_audio_files():
     except Exception as e:
         logger.error(f"An error occurred during processing of audio file: {e}", exc_info=True)
         raise Exception(f"An error occurred during processing of audio file: {e}")
-
-
-if __name__ == "__main__":
-  res = classify_text("I have to go pee pee")
-  print('r', res)
